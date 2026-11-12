@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Name=sfjth
+Comment=水木社区终端风格客户端
+# The Exec line includes %u to pass the URL to the application
+Exec=/usr/local/bin/sfjth.exe %u
+Terminal=false
+Type=Application
+Icon=sfjth.exe
+Categories=Utility;
+StartupWMClass=sfjth.exe
+
+ 

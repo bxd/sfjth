@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>sfjth - 水木社区</title>
+</head>
+<body>
+<div id="viewport">
+    <div id="term">
+        <div id="topline"></div>
+        <!-- 标题栏拖动层：Wails 只认「鼠标按下那个元素自己」的 --wails-draggable，
+             而顶栏里的字符是 inline span（clientHeight 为 0），判定永远失败。
+             这里铺一层与顶栏同高的透明块，专门用来按住拖动窗口。 -->
+        <div id="dragbar" aria-hidden="true"></div>
+        <div id="screen"></div>
+        <div id="bottomline"></div>
+        <div id="helpbar"></div>
+        <div id="prompt" class="hidden">
+            <span id="prompt-label"></span><input id="prompt-input" autocomplete="off" spellcheck="false"/>
+        </div>
+        <div id="editor" class="hidden">
+            <div id="editor-head"></div>
+            <textarea id="editor-body" spellcheck="false" wrap="soft"></textarea>
+        </div>
+        <!-- 阅读文章的可滚屏文档：正文与附件在同一个内容流里，一起上下滚 -->
+        <div id="reader" class="hidden"></div>
+        <!-- 版面文章列表的可滚屏文档：跨页累积，上下平滑续读，不整屏翻页 -->
+        <div id="threadlist" class="hidden"></div>
+        <div id="attach-view" class="hidden">
+            <div id="attach-head"></div>
+            <div id="attach-prev"></div>
+            <div id="attach-foot"></div>
+        </div>
+        <!-- 无边框窗口控制按钮：放在 #term 内，与蓝色顶栏同一行（跟随网格缩放） -->
+        <div id="winbtns" aria-label="窗口控制">
+            <button id="win-min" type="button" title="最小化" tabindex="-1">
+                <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 9.5h8"/></svg>
+            </button>
+            <button id="win-max" type="button" title="最大化" tabindex="-1">
+                <svg class="ico-max" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="2" width="8" height="8"/></svg>
+                <svg class="ico-restore" viewBox="0 0 12 12" aria-hidden="true">
+                    <rect x="1.5" y="3.5" width="7" height="7"/><path d="M3.5 3.5V1.5h7v7h-2"/>
+                </svg>
+            </button>
+            <button id="win-close" type="button" title="关闭" tabindex="-1">
+                <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7"/></svg>
+            </button>
+        </div>
+        <div id="toast" class="hidden"></div>
+    </div>
+</div>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>

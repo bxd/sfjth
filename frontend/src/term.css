@@ -1,0 +1,549 @@
+/* sfjth —— term / FTerm / CTerm 风格字符终端皮肤
+   80 列 × 24 行，ANSI 16 色，等宽半角/全角 1:2 网格。
+   Windows 上用「新宋体」保证 ASCII 为半角、汉字为全角，正好两格。 */
+
+:root {
+  --cw: 11px;               /* 半角字符宽度 */
+  --lh: 22px;               /* 行高 */
+  --cols: 80;
+  --rows: 24;
+  --scale: 1;
+  /* 默认等宽 Mono 字体；实际生效的字体由 main.js 实测挑出（必须满足汉字=2×半角），
+     这里只是首屏兜底。--fs 同理：按选定字体的半角宽度换算，保证一个半角正好一格。 */
+  --font: "Maple Mono SC NF", "Cascadia Mono", "Sarasa Mono SC", "NSimSun", monospace;
+  --fs: calc(var(--cw) * 2);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+  color: #c8c8c8;
+  font-family: var(--font);
+  -webkit-font-smoothing: none;
+  font-smooth: never;
+  user-select: none;
+  cursor: default;
+}
+
+body {
+  display: flex;
+  /* 顶部对齐：无边框窗口下蓝色顶栏必须紧贴窗口第一像素。
+     垂直居中会让窗口比 80x24 网格高时在蓝条上面留一条黑边。 */
+  align-items: flex-start;
+  justify-content: center;
+}
+
+#viewport {
+  position: relative;
+  width: calc(var(--cols) * var(--cw));
+  height: calc(var(--rows) * var(--lh));
+  overflow: hidden;
+  background: #000;
+}
+
+#term {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: calc(var(--cols) * var(--cw));
+  height: calc(var(--rows) * var(--lh));
+  transform: scale(var(--scale));
+  transform-origin: top left;
+  background: #000;
+  overflow: hidden;
+}
+
+#topline, #bottomline, #helpbar {
+  height: var(--lh);
+  line-height: var(--lh);
+}
+
+#screen {
+  height: calc(21 * var(--lh));  /* 24 - 顶栏1 - 底栏1 - 帮助栏1 */
+  overflow: hidden;
+}
+
+.row {
+  height: var(--lh);
+  line-height: var(--lh);
+  font-size: var(--fs);
+  white-space: pre;
+  overflow: hidden;
+  letter-spacing: 0;
+  font-variant-ligatures: none;
+}
+
+.row span { display: inline; }
+
+/* ---- ANSI 前景色 ---- */
+.w  { color: #c8c8c8; }   /* 灰白（正文默认） */
+.W  { color: #ffffff; }   /* 高亮白 */
+.k  { color: #808080; }   /* 暗灰：已读标题 / 引文 */
+.kk { color: #505050; }   /* 更暗 */
+.y  { color: #ffff55; }   /* 黄 */
+.Y  { color: #ffcc33; }   /* 亮黄/橙 */
+.r  { color: #ff5555; }   /* 红 */
+.R  { color: #ff8888; }
+.g  { color: #55ff55; }   /* 绿 */
+.G  { color: #aaffaa; }
+.c  { color: #55ffff; }   /* 青 */
+.C  { color: #aaffff; }
+.b  { color: #6688ff; }   /* 蓝 */
+.m  { color: #ff77ff; }   /* 洋红 */
+.o  { color: #ff9900; }   /* 橙 */
+
+/* ---- 背景色块 ---- */
+.blue    { background: #0000aa; }
+.darkblue{ background: #000066; }
+.green   { background: #00a800; }
+.brown   { background: #8b5a00; }
+.yellow  { background: #d6d600; }
+.red     { background: #aa0000; }
+.gray    { background: #c8c8c8; color: #000; }
+.inv     { background: #d8d8d8; color: #000; }
+.cyanbg  { background: #00aaaa; }
+
+/* ---- 整行属性 ---- */
+.bar { background: #0000aa; }
+.help { background: #000088; }
+.selected { background: #004080; }
+.hidden { display: none !important; }
+
+/* ---- 命令行输入 ---- */
+/* 美术字符（█ ▲ ◆ ─ 等）与回退字形：统一用中文等宽字体、按两格字号渲染，
+   这样方块才真的是两格宽；字体未装中文等宽字体时也能保持整幅画面不变形。 */
+.art2 {
+  font-family: "NSimSun", "SimSun", "宋体", "MS Gothic", monospace;
+  font-size: calc(var(--cw) * 2);
+}
+
+#prompt {
+  position: absolute;
+  left: 0;
+  bottom: calc(2 * var(--lh));
+  width: 100%;
+  height: var(--lh);
+  line-height: var(--lh);
+  font-size: var(--fs);
+  white-space: pre;
+  background: #000;
+  z-index: 20;
+  /* 标签 + 输入框必须在 80 列内排成一行：固定宽度的输入框会换行压住正文，
+     还会让容器横向滚动，导致整个主菜单左移截断。 */
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+/* term「选择阅读讨论区」：输入行贴在屏幕顶部第一行正文 */
+#prompt.at-top { bottom: auto; top: var(--lh); }
+
+#prompt-label { color: #ffff55; flex: 0 0 auto; white-space: pre; }
+#prompt-input {
+  display: inline-block;
+  border: 0;
+  outline: 0;
+  padding: 0;
+  margin: 0;
+  background: #000;
+  color: #fff;
+  font-family: var(--font);
+  font-size: var(--fs);
+  line-height: var(--lh);
+  height: var(--lh);
+  flex: 1 1 auto;
+  width: 0;
+  min-width: 0;
+  caret-color: transparent;
+}
+
+/* 闪烁方块光标（term 味） */
+#prompt-input::after { content: ""; }
+.caret {
+  display: inline-block;
+  width: var(--cw);
+  height: calc(var(--cw) * 2);
+  background: #c8c8c8;
+  vertical-align: text-bottom;
+  animation: blink 1s steps(1) infinite;
+}
+@keyframes blink { 0%,49% { opacity: 1 } 50%,100% { opacity: 0 } }
+
+/* ---- 编辑器（发文 / 回帖 / 写信） ---- */
+#editor {
+  position: absolute;
+  inset: var(--lh) 0 calc(2 * var(--lh)) 0;
+  background: #000;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+}
+#editor-head {
+  flex: 0 0 auto;
+  font-size: var(--fs);
+  line-height: var(--lh);
+  white-space: pre;
+  color: #ffff55;
+  border-bottom: 1px dashed #555;
+}
+#editor-body {
+  flex: 1 1 auto;
+  width: 100%;
+  resize: none;
+  border: 0;
+  outline: 0;
+  padding: 0;
+  margin: 0;
+  background: #000;
+  color: #c8c8c8;
+  font-family: var(--font);
+  font-size: var(--fs);
+  line-height: var(--lh);
+  white-space: pre-wrap;
+  caret-color: #55ff55;
+  overflow-y: auto;
+}
+
+/* ---- 阅读文章：正文与附件在同一个可滚屏文档里 ----
+   和长正文续读一样：空格/PgUp/PgDn 或滚轮把整个内容流上下滚，
+   正文滚上去后附件图片自然接在后面顶上来；图片按宽度自适应，
+   高度按原始比例展开，一屏放不下就继续往下滚。 */
+#reader {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(2 * var(--lh));      /* 跳过第 1 行标题栏 */
+  height: calc(19 * var(--lh));  /* 正文滚动区 19 行，第 21 行留给状态栏 */
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #00aaaa #000;
+  scroll-snap-type: y mandatory; /* 外层只停在楼层边界，不会半屏悬在两楼之间 */
+  background: #000;
+  z-index: 11;                   /* 盖住 draw 的正文占位行，低于编辑/放大面板 */
+  outline: none;
+  font-family: var(--font);
+  color: #c8c8c8;
+}
+/* 每楼固定占满一屏：长楼在楼内滚动，短楼留白；屏幕上永远只有一层，
+   按 r 回帖 / 按 v 看附件时目标楼层没有歧义。 */
+#reader .reader-post {
+  height: 100%;
+  min-height: 100%;
+  position: relative;
+  box-sizing: border-box;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-width: none;         /* 楼内滚动条隐藏，外层滚动条仍能看出读到第几楼 */
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+#reader .reader-post::-webkit-scrollbar { width: 0; height: 0; }
+#reader .reader-post + .reader-post { border-top: 1px solid #003366; }
+#reader .reader-floor-line { color: #ffff55; }
+#reader::-webkit-scrollbar { width: 8px; }
+#reader::-webkit-scrollbar-track { background: #000; }
+#reader::-webkit-scrollbar-thumb { background: #005f5f; }
+
+/* ---- 版面文章列表：跨页累积成一个可滚屏文档 ----
+   表头固定在第 1 行，列表占中间 19 行，最后一行留给状态栏；
+   上下键/空格/PgDn/PgUp/滚轮平滑滚动，接近底部自动续载下一页。 */
+#threadlist {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(2 * var(--lh));
+  height: calc(19 * var(--lh));
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #00aaaa #000;
+  background: #000;
+  z-index: 11;
+  outline: none;
+}
+#threadlist::-webkit-scrollbar { width: 8px; }
+#threadlist::-webkit-scrollbar-track { background: #000; }
+#threadlist::-webkit-scrollbar-thumb { background: #005f5f; }
+#threadlist .row { height: var(--lh); line-height: var(--lh); }
+#threadlist .row.selected { background: #004080; }
+#reader .row { height: var(--lh); line-height: var(--lh); }
+/* 图片宽度自适应铺满正文区，高度按比例展开，随正文一起滚。 */
+#reader img {
+  display: block;
+  width: auto;
+  max-width: calc(100% - 2 * var(--cw));  /* 左右各留一条字符空白 */
+  height: auto;
+  max-height: none;
+  margin: 0 auto;
+}
+#reader audio { display: block; width: 100%; height: 32px; }
+#reader video { display: block; width: auto; max-width: 100%; height: auto; max-height: none; margin: 0 auto; }
+#reader iframe { display: block; width: 100%; height: calc(10 * var(--lh)); border: 0; background: #fff; }
+
+/* ---- 附件区版式：预览与「附件 [n/m] 文件名」之间空一行，
+   左右各让出两列汉字宽（一列汉字 = 2 个半角格，即 4*var(--cw)） ---- */
+#reader .reader-attach > img,
+#reader .reader-attach > video,
+#reader .reader-attach > audio,
+#reader .reader-attach > iframe,
+#reader .reader-attach > pre,
+#reader .reader-attach > .ia-card,
+#reader .reader-attach > .ia-meta {
+  margin-top: var(--lh);
+  margin-bottom: 0;
+  margin-left: calc(4 * var(--cw));
+  margin-right: calc(4 * var(--cw));
+  width: calc(100% - 8 * var(--cw));
+  max-width: calc(100% - 8 * var(--cw));
+}
+/* 图片/视频保持原始比例，在缩窄后的区域里居中。 */
+#reader .reader-attach > img,
+#reader .reader-attach > video {
+  width: auto;
+  margin-left: auto;
+  margin-right: auto;
+}
+/* 卡片/提示文字缩进到与预览同一条左边界。 */
+#reader .reader-attach > .ia-card,
+#reader .reader-attach > .ia-meta { width: auto; }
+#reader .reader-attach > .ia-open { margin-left: calc(4 * var(--cw) + 4px); }
+#reader pre {
+  margin: 0;
+  width: 100%;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: #c8c8c8;
+  font-family: var(--font);
+  font-size: var(--fs);
+  line-height: var(--lh);
+  text-align: left;
+}
+.ia-card { text-align: center; line-height: 1.5; }
+.ia-icon { color: #ffff55; }
+.ia-name { color: #fff; }
+.ia-meta { color: #808080; }
+.ia-sep { border-top: 1px solid #00aaaa; }
+.ia-open {
+  display: inline-block;
+  margin: 2px 4px;
+  padding: 0 6px;
+  background: #0000aa;
+  color: #fff;
+  border: 1px solid #ffff55;
+  font-family: var(--font);
+  font-size: var(--fs);
+  line-height: var(--lh);
+  cursor: pointer;
+}
+
+/* ---- 正文附件预览面板（v 放大） ---- */
+#attach-view {
+  position: absolute;
+  inset: var(--lh) 0 calc(2 * var(--lh)) 0;
+  background: #000;
+  border: 2px solid #00aaaa;
+  z-index: 35;               /* 高于编辑器，低于 toast */
+  display: flex;
+  flex-direction: column;
+  font-size: var(--fs);
+  line-height: var(--lh);
+}
+#attach-head, #attach-foot {
+  flex: 0 0 var(--lh);
+  height: var(--lh);
+  line-height: var(--lh);
+  padding: 0 1ch;
+  white-space: pre;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#attach-head { background: #0000aa; color: #ffff55; }
+#attach-foot { background: #000088; color: #fff; }
+#attach-prev {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #00aaaa #000;
+  padding: 8px 12px;
+  color: #c8c8c8;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 8px;
+}
+/* 图片查看器：容器负责裁剪与拖动，img 用 transform 缩放/平移。
+   宽高都自适应视窗（contain），滚轮缩放，左键拖动，方向键平移。 */
+#attach-prev.zoom-mode {
+  padding: 0;
+  overflow: hidden;
+  align-items: center;
+  justify-content: center;
+}
+#attach-zoom {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+  background: #000;
+}
+#attach-zoom.dragging { cursor: grabbing; }
+#attach-zoom img {
+  /* 只由 applyZoom 的 transform 决定位置；若再用 flex 居中会叠加偏移 */
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+  max-width: none;
+  max-height: none;
+  transform-origin: 0 0;
+  will-change: transform;
+  -webkit-user-drag: none;
+  user-select: none;
+}
+#attach-prev audio, #attach-prev video { display: block; width: auto; max-width: 100%; height: auto; max-height: none; margin: 0 auto; }
+#attach-prev iframe { width: 100%; height: 100%; min-height: calc(10 * var(--lh)); border: 0; background: #fff; flex: 1 1 auto; }
+#attach-prev pre {
+  margin: 0;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: #c8c8c8;
+  font-family: var(--font);
+  font-size: var(--fs);
+  line-height: var(--lh);
+  text-align: left;
+}
+.attach-file { text-align: center; }
+.attach-icon { color: #ffff55; font-size: calc(var(--cw) * 6); line-height: 1.4; }
+.attach-filename { color: #fff; word-break: break-all; }
+.attach-meta, .attach-info { color: #808080; }
+.attach-error { color: #ff5555; }
+.attach-btn {
+  margin-top: 8px;
+  padding: 2px 10px;
+  background: #0000aa;
+  color: #fff;
+  border: 1px solid #ffff55;
+  font-family: var(--font);
+  font-size: var(--fs);
+  line-height: var(--lh);
+  cursor: pointer;
+}
+.attach-btn:hover { background: #004080; }
+
+/* ---- 消息浮层 ---- */
+#toast {
+  position: absolute;
+  left: 4ch;
+  right: 4ch;
+  bottom: calc(4 * var(--lh));
+  padding: 4px 10px;
+  background: #0000aa;
+  color: #fff;
+  border: 1px solid #ffff55;
+  font-size: var(--fs);
+  line-height: var(--lh);
+  z-index: 40;
+  white-space: pre-wrap;
+}
+
+/* 鼠标点击的可选行 */
+.row[data-row] { cursor: pointer; }
+.row[data-row]:hover { background: #002050; }
+
+/* ---- term 进站登录画面：全屏 24 行，无顶/底/帮助蓝条 ---- */
+#term.login-mode #topline,
+#term.login-mode #bottomline,
+#term.login-mode #helpbar { display: none; }
+#term.login-mode #screen { height: calc(24 * var(--lh)); }
+#term.login-mode #toast { bottom: calc(3 * var(--lh)); }
+
+/* 方块光标闪烁（登录输入行） */
+.blink { animation: blink 1s steps(1) infinite; }
+
+/* ---- 无边框窗口：控制按钮并入蓝色顶栏同一行 ----
+   Frameless 后没有系统标题栏。按钮放在 #term 内绝对定位到第 1 行右侧，
+   与蓝色顶栏共用同一行、跟随字符网格一起缩放；顶栏右侧文字由
+   winReserveCols() 自动往左让出这几个字符宽度。 */
+#winbtns {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: var(--lh);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 4px;
+  background: #0000aa;
+  -webkit-app-region: no-drag;
+}
+#winbtns button {
+  width: 24px;
+  height: 18px;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #5566cc;
+  border-radius: 0;
+  background: #0000aa;
+  color: #e4e8ff;
+  cursor: default;
+  outline: 0;
+  -webkit-app-region: no-drag;
+}
+#winbtns button:hover { background: #2546d8; border-color: #8fa8ff; color: #fff; }
+#winbtns button:active { background: #4a6aff; }
+#winbtns #win-close:hover { background: #bb0000; border-color: #ff7777; }
+#winbtns svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.3;
+  stroke-linecap: square;
+}
+#term.login-mode #winbtns { background: transparent; }
+#term.login-mode #winbtns button { background: #000080; }
+#winbtns .ico-restore { display: none; }
+#winbtns.maximised .ico-max { display: none; }
+#winbtns.maximised .ico-restore { display: block; }
+
+/* ---- 无边框窗口：可拖动区域 ----
+   Wails 3 runtime 的判定是「按下的那个元素自身」computed --wails-draggable == drag，
+   且 offsetX/offsetY 必须落在它的 clientWidth/clientHeight 之内。字符行的内容都是
+   inline <span>（clientHeight 恒为 0），所以给 #topline 这类容器加标志并不生效。
+   解决办法是铺一层与首行等高的透明块 #dragbar 专供拖动；窗口按钮层级更高，照常可点。 */
+#dragbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--lh);
+  z-index: 60;                 /* 低于 #winbtns(100)，高于正文 */
+  background: transparent;
+  --wails-draggable: drag;
+}
+/* 登录屏没有蓝色顶栏，整屏都可拖：用同一层铺满 24 行；层级压低到输入行之下 */
+#term.login-mode #dragbar { height: calc(24 * var(--lh)); z-index: 10; }
+#winbtns, #winbtns button { --wails-draggable: no-drag; }
+
